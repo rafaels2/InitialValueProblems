@@ -1,0 +1,7 @@
+title = "IVP config"
+
+t_f = 5
+number_of_sites = [150, 200, 300, 400, 800, 1500]
+#number_of_sites = [16, 32]
+k_h_power = 1
+ratio = 0.8

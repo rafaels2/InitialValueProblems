@@ -1,0 +1,8 @@
+title = "IVP config"
+
+t_f = 1
+# Cant add more than 100 becuase solution explodes
+number_of_sites = [16, 32, 48, 64, 100, 300, 600]
+#number_of_sites = [16, 32]
+k_h_power = 2
+ratio = 0.9
