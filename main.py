@@ -1,18 +1,29 @@
 import os
+import sys
 
 import numpy as np
 from numpy import linalg as la
 from matplotlib import pyplot as plt
 import toml
+import logging
 
-from problems.advection import AdvectionForwardEuler, AdvectionLeapFrog, AdvectionUpwind
 from finite_differences import FiniteDifferences
 from fit import fit_linear
-from problems.heat import HeatForwardEuler, HeatLeapFrog
-from problems.second_order import SecondOrderForwardEuler, SecondOrderModifiedForwardEuler, SecondOrderBackwardEuler, \
-    SecondOrderCrankNicholson
+from problems.second_order import (
+    SecondOrderForwardEuler,
+    SecondOrderModifiedForwardEuler,
+    SecondOrderBackwardEuler,
+    SecondOrderCrankNicholson,
+    SecondOrderLeapFrog,
+    SecondOrderDuFort,
+)
+from utils import RESULTS_PATH
 
 NDIM = 2
+
+logging.basicConfig(
+    stream=sys.stdout, level=logging.INFO, format="%(asctime)s: %(message)s"
+)
 
 
 def get_time_step(fill_distance, config):
@@ -26,35 +37,57 @@ def get_config(filename="config.toml"):
 
 
 def evaluate_on_sites(sites, solution, t):
+    # print("sites: ", sites[-1])
     evaluation = np.array(
         [solution(sites[index], t) for index in np.ndindex(sites.shape)]
     )
-    return np.ravel(np.transpose(evaluation))
+    return np.ravel(evaluation)
 
 
 def evaluate_error(numerical, analytical, fill_distance):
+    # print("shape: ", numerical.shape)
     if NDIM > 1:
-        numerical.resize(NDIM, int(numerical.shape[0] / NDIM))
-        analytical.resize(NDIM, int(analytical.shape[0] / NDIM))
-    differences = la.norm(numerical - analytical, axis=0)
+        numerical.resize(int(numerical.shape[0] / NDIM), NDIM)
+        analytical.resize(int(analytical.shape[0] / NDIM), NDIM)
+    differences = la.norm(numerical - analytical, axis=1)
     error = np.sqrt(np.sum((np.abs(differences) ** 2) * fill_distance))
     plt.figure()
-    plt.plot(la.norm(numerical, axis=0), label="abs(Numerical)")
-    plt.plot(la.norm(analytical, axis=0), label="abs(Analytical)")
-    plt.title(f"N = {numerical.shape[1]}, error = {error}")
-    plt.show()
+    plt.plot(numerical.real[:, 0], label="real(numerical[0])")
+    plt.plot(analytical.real[:, 0], label="real(analytical[0])")
+    plt.legend()
+    plt.title(f"re 0 n = {numerical.shape[0]}, error = {error}")
+    plt.show(block=False)
+    plt.figure()
+    plt.plot(numerical.real[:, 1], label="real(numerical[1])")
+    plt.plot(analytical.real[:, 1], label="real(analytical[1])")
+    plt.legend()
+    plt.title(f"re 1 n = {numerical.shape[0]}, error = {error}")
+    plt.show(block=False)
+    plt.figure()
+    plt.plot(numerical.imag[:, 0], label="imag(Numerical[0])")
+    plt.plot(analytical.imag[:, 0], label="imag(Analytical[0])")
+    plt.legend()
+    plt.title(f"Im 0 N = {numerical.shape[0]}, error = {error}")
+    plt.show(block=False)
+    plt.figure()
+    plt.plot(numerical.imag[:, 1], label="imag(Numerical[1])")
+    plt.plot(analytical.imag[:, 1], label="imag(Analytical[1])")
+    plt.legend()
+    plt.title(f"Im 1 N = {numerical.shape[0]}, error = {error}")
+    plt.show(block=False)
+    logging.info(f"N={numerical.shape[0]}")
     return error
 
 
 def run_problem(problem_type: type, config):
     errors = list()
     for number_of_sites in config["number_of_sites"]:
-        print("start")
+        # print("start")
         sites = np.linspace(0, 1, number_of_sites, endpoint=False)
         fill_distance = sites[1] - sites[0]
         time_step = get_time_step(fill_distance, config)
-        print(f"h = {fill_distance}, k = {time_step}")
-        problem = problem_type(sites, fill_distance, time_step)
+        logging.info(f"h = {fill_distance}, k = {time_step}")
+        problem = problem_type(sites, fill_distance, time_step, config)
         general_initial_function = lambda x, t: problem.initial_function(x)
         initial_evaluation = evaluate_on_sites(sites, general_initial_function, 0)
         engine = FiniteDifferences(
@@ -65,40 +98,45 @@ def run_problem(problem_type: type, config):
         )
         engine.run(config["t_f"])
         final_state = engine.state
-        solution = evaluate_on_sites(sites, problem.solution, engine.time)
+        # print("t_f", engine.time)
+        # solution = evaluate_on_sites(sites, problem.solution, 1.0051)
+        solution = evaluate_on_sites(sites, problem.solution, config["t_f"])
         error = evaluate_error(final_state, solution, fill_distance)
         errors.append(error)
     fit_linear(
         np.log(np.array(config["number_of_sites"])) / np.log(10),
         np.log(errors) / np.log(10),
-        problem_type.__name__,
+        f"{config['name']}_lambda_{config['ratio']}_power_{'k_h_power'}_{problem.special_config}",
     )
 
 
 def run():
     problems = [
-        # (AdvectionForwardEuler, "advection_forward_config.toml"),
-        # (AdvectionForwardEuler, "advection_forward_config_2.toml"),
-        # (AdvectionLeapFrog, "advection_leap_frog.toml"),
-        # (AdvectionLeapFrog, "advection_leap_frog_2.toml"),
-        # (HeatForwardEuler, "heat_forward_euler.toml"),
-        # (HeatForwardEuler, "heat_forward_euler_2.toml"),
-        # (HeatLeapFrog, "heat_leap_frog.toml"),
-        # (HeatLeapFrog, "heat_leap_frog_2.toml"),
-        # (AdvectionUpwind, "advection_upwind.toml"),
-        # (SecondOrderModifiedForwardEuler, "so_forward_euler_2.toml"),
-        # (SecondOrderBackwardEuler, "so_backward_euler_2.toml"),
+        (SecondOrderForwardEuler, "so_forward_euler_2.toml"),
+        (SecondOrderModifiedForwardEuler, "so_forward_euler_mod_2.toml"),
+        (SecondOrderBackwardEuler, "so_backward_euler_2.toml"),
+        (SecondOrderLeapFrog, "so_leap_frog.toml"),
         (SecondOrderCrankNicholson, "so_crank_2.toml"),
+        (SecondOrderDuFort, "so_du_fort.toml"),
     ]
 
     for problem, config_file in problems:
         config = get_config(config_file)
-        run_problem(problem, config)
+        logging.info(f"Running {config['name']}")
+        try:
+            run_problem(problem, config)
+        except Exception as e:
+            logging.info(f"Error in run {config['name']}, with exception {e}")
 
 
 def main():
+    path = RESULTS_PATH
+    if not os.path.isdir(path):
+        os.mkdir(path)
+
     run()
 
 
 if __name__ == "__main__":
     main()
+    input("Done?")

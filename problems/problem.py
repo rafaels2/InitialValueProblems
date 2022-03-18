@@ -4,7 +4,7 @@ import numpy as np
 
 
 class Problem(object):
-    def __init__(self, sites, h, k):
+    def __init__(self, sites, h, k, config):
         self._sites = sites
         self._k = k
         self._h = h
@@ -27,3 +27,7 @@ class Problem(object):
         for index in np.ndindex(*initial_value.shape):
             initial_value[index] = self.initial_function(self._sites[index])
         return initial_value
+
+    @property
+    def special_config(self):
+        return ""

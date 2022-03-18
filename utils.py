@@ -1,4 +1,7 @@
+import matplotlib.pyplot as plt
 import numpy as np
+
+RESULTS_PATH = "results_2"
 
 
 def get_off_diagonal_diff(size):
@@ -62,3 +65,13 @@ def from_point_to_array(operator, size):
             for j in range(operator.shape[0])
         ]
     )
+
+
+def show_matrix(mat, name):
+    # print(f"name: {name} shape: {mat.shape}")
+    return
+    plt.figure()
+    plt.matshow(mat.real)
+    plt.title(name)
+    plt.colorbar()
+    plt.show()

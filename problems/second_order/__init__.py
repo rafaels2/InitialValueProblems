@@ -1,3 +1,5 @@
 from .forward_euler import SecondOrderForwardEuler, SecondOrderModifiedForwardEuler
 from .backward_euler import SecondOrderBackwardEuler
 from .crank_nicholson import SecondOrderCrankNicholson
+from .leap_frog import SecondOrderLeapFrog
+from .dufort_frankel import SecondOrderDuFort

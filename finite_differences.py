@@ -28,6 +28,7 @@ class FiniteDifferences(object):
     def run(self, final_time):
         while self._current_time < final_time + self._time_step:
             self.tick()
+        # pass
 
     @property
     def state(self):
