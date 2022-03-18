@@ -1,3 +1,6 @@
+"""
+Here we have both FE and FE_mod schemes.
+"""
 import numpy as np
 from problems.second_order.second_order import SecondOrder
 import matplotlib.pyplot as plt

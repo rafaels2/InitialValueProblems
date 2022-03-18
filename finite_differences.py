@@ -1,5 +1,7 @@
-import numpy as np
-from matplotlib import pyplot as plt
+"""
+This is the finite differnces engine.
+It runs the given time step operator for a given time.
+"""
 
 
 class FiniteDifferences(object):

@@ -1,3 +1,9 @@
+"""
+This is the main file of the project.
+It runs different scheme in different configurations, and evaluates their errors.
+
+It was tested in Pycharm on Windows.
+"""
 import os
 import sys
 
@@ -45,6 +51,13 @@ def evaluate_on_sites(sites, solution, t):
 
 
 def evaluate_error(numerical, analytical, fill_distance):
+    """
+    Evaluating the error between numerical and analytical solutions.
+    :param numerical:
+    :param analytical:
+    :param fill_distance: Required for norm_h calculation
+    :return:
+    """
     # print("shape: ", numerical.shape)
     if NDIM > 1:
         numerical.resize(int(numerical.shape[0] / NDIM), NDIM)
@@ -74,7 +87,7 @@ def evaluate_error(numerical, analytical, fill_distance):
     plt.plot(analytical.imag[:, 1], label="imag(Analytical[1])")
     plt.legend()
     plt.title(f"Im 1 N = {numerical.shape[0]}, error = {error}")
-    plt.show(block=False)
+    plt.show(block=True)
     logging.info(f"N={numerical.shape[0]}")
     return error
 
@@ -83,6 +96,7 @@ def run_problem(problem_type: type, config):
     errors = list()
     for number_of_sites in config["number_of_sites"]:
         # print("start")
+        logging.info("============New cycle=============")
         sites = np.linspace(0, 1, number_of_sites, endpoint=False)
         fill_distance = sites[1] - sites[0]
         time_step = get_time_step(fill_distance, config)
@@ -102,6 +116,7 @@ def run_problem(problem_type: type, config):
         # solution = evaluate_on_sites(sites, problem.solution, 1.0051)
         solution = evaluate_on_sites(sites, problem.solution, config["t_f"])
         error = evaluate_error(final_state, solution, fill_distance)
+        logging.info(f"Error: {error}")
         errors.append(error)
     fit_linear(
         np.log(np.array(config["number_of_sites"])) / np.log(10),
@@ -111,18 +126,25 @@ def run_problem(problem_type: type, config):
 
 
 def run():
+    """
+    This is the main runner of the problems.
+    It configures which scheme to run, and in what configuration.
+    """
+
+    # To run a single experiment, You can comment out the others.
     problems = [
-        (SecondOrderForwardEuler, "so_forward_euler_2.toml"),
-        (SecondOrderModifiedForwardEuler, "so_forward_euler_mod_2.toml"),
-        (SecondOrderBackwardEuler, "so_backward_euler_2.toml"),
-        (SecondOrderLeapFrog, "so_leap_frog.toml"),
-        (SecondOrderCrankNicholson, "so_crank_2.toml"),
+        # (SecondOrderForwardEuler, "so_forward_euler_2.toml"),
+        # To run the modified FE, You have to configure sigma
+        # (SecondOrderModifiedForwardEuler, "so_forward_euler_mod_2.toml"),
+        # (SecondOrderBackwardEuler, "so_backward_euler_2.toml"),
+        # (SecondOrderLeapFrog, "so_leap_frog.toml"),
+        # (SecondOrderCrankNicholson, "so_crank_2.toml"),
         (SecondOrderDuFort, "so_du_fort.toml"),
     ]
 
     for problem, config_file in problems:
         config = get_config(config_file)
-        logging.info(f"Running {config['name']}")
+        logging.info(f"=================Running {config['name']}===============")
         try:
             run_problem(problem, config)
         except Exception as e:

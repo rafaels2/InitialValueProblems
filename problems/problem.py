@@ -1,3 +1,7 @@
+"""
+This is the root class for a scheme.
+It assumes a constant k, h, and generation of time step operator.
+"""
 import abc
 
 import numpy as np

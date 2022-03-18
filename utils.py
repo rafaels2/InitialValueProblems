@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-RESULTS_PATH = "results_2"
+RESULTS_PATH = "results"
 
 
 def get_off_diagonal_diff(size):
