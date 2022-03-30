@@ -7,7 +7,7 @@ np.seterr(all="raise")
 
 class SecondOrderDuFort(SecondOrder):
     def _generate_operator(self):
-        lambda_m = 1 + 4 / (self._h ** 2)
+        lambda_m = 4 + 4 / (self._h ** 2)
         gamma = 1
         operator = (
             2
